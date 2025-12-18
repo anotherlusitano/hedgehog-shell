@@ -1,13 +1,16 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-const VALID_COMMANDS: [ValidCommand; 2] = [ValidCommand("exit", false), ValidCommand("echo", true)];
+const VALID_COMMANDS: [ValidCommand; 3] = [
+    ValidCommand("exit", false),
+    ValidCommand("echo", true),
+    ValidCommand("type", true),
+];
 
 /// 0 = Name ; 1 = have args?
 #[derive(Debug, PartialEq)]
 struct ValidCommand<'a>(&'a str, bool);
 
-/// If don't found the command, will return `False`
 fn is_valid_command(command_name: &'_ str) -> Result<ValidCommand<'_>, &'_ str> {
     for command in VALID_COMMANDS {
         if command.0 == command_name {
@@ -33,8 +36,15 @@ fn main() {
 
         match is_valid_command(cmd) {
             Ok(cmd) => {
+                // If the Command doesn't need args but there are args
                 if !cmd.1 && tokens.len() > 1 {
                     println!("{}: too many arguments", input.trim());
+                    input.clear(); // Clear the errors
+                    continue;
+                }
+                // If the Command need args but there are no args
+                if cmd.1 && tokens.len() == 1 {
+                    println!("{}: too few arguments", input.trim());
                     input.clear(); // Clear the errors
                     continue;
                 }
@@ -42,6 +52,16 @@ fn main() {
                 match cmd.0 {
                     "exit" => break,
                     "echo" => println!("{}", args.join(" ")),
+                    "type" => {
+                        let have_cmd = VALID_COMMANDS
+                            .iter()
+                            .find(|cmd| &cmd.0 == args.first().unwrap());
+
+                        match have_cmd {
+                            Some(cmd) => println!("{} is a shell builtin", cmd.0),
+                            None => println!("{}: not found", input.trim()),
+                        }
+                    }
                     _ => {
                         input.clear(); // Clear the errors
                         continue;
