@@ -1,16 +1,25 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-#[derive(Debug)]
-struct Command<'a> {
-    name: &'a str,
-    args: Option<&'a str>,
+const VALID_COMMANDS: [ValidCommand; 2] = [ValidCommand("exit", false), ValidCommand("echo", true)];
+
+/// 0 = Name ; 1 = have args?
+#[derive(Debug, PartialEq)]
+struct ValidCommand<'a>(&'a str, bool);
+
+/// If don't found the command, will return `False`
+fn is_valid_command(command_name: &'_ str) -> Result<ValidCommand<'_>, &'_ str> {
+    for command in VALID_COMMANDS {
+        if command.0 == command_name {
+            return Ok(command);
+        }
+    }
+
+    Err("command not found")
 }
 
 fn main() {
     let mut input = String::new();
-
-    let valid_commands = ["exit", "echo"];
 
     loop {
         print!("$ ");
@@ -18,32 +27,28 @@ fn main() {
 
         io::stdin().read_line(&mut input).unwrap();
 
-        let tokens = input.trim().split_once(' ');
+        let tokens: Vec<&str> = input.trim().split(' ').collect();
 
-        // TODO: some commands don't allow args so we should verify that somehow
-        let cmd = if let Some((cname, args)) = tokens {
-            Command {
-                name: cname,
-                args: Some(args),
-            }
-        } else {
-            Command {
-                name: input.trim(),
-                args: None,
-            }
-        };
+        let (cmd, args) = tokens.split_first().unwrap();
 
-        if !valid_commands.contains(&cmd.name) {
-            println!("{}: command not found", input.trim())
-        }
+        match is_valid_command(cmd) {
+            Ok(cmd) => {
+                if !cmd.1 && tokens.len() > 1 {
+                    println!("{}: too many arguments", input.trim());
+                    input.clear(); // Clear the errors
+                    continue;
+                }
 
-        match cmd.name {
-            "exit" => break,
-            "echo" => println!("{}", cmd.args.unwrap()),
-            _ => {
-                input.clear(); // Clear the errors
-                continue;
+                match cmd.0 {
+                    "exit" => break,
+                    "echo" => println!("{}", args.join(" ")),
+                    _ => {
+                        input.clear(); // Clear the errors
+                        continue;
+                    }
+                }
             }
+            Err(e) => println!("{}: {}", input.trim(), e),
         }
 
         input.clear(); // Don't forget to clear the buffer
