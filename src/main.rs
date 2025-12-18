@@ -59,7 +59,7 @@ fn main() {
 
                         match have_cmd {
                             Some(cmd) => println!("{} is a shell builtin", cmd.0),
-                            None => println!("{}: not found", input.trim()),
+                            None => println!("{}: not found", args.join(" ")),
                         }
                     }
                     _ => {
