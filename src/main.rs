@@ -1,10 +1,16 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
+#[derive(Debug)]
+struct Command<'a> {
+    name: &'a str,
+    args: Option<&'a str>,
+}
+
 fn main() {
     let mut input = String::new();
 
-    let valid_commands = ["exit"];
+    let valid_commands = ["exit", "echo"];
 
     loop {
         print!("$ ");
@@ -12,19 +18,34 @@ fn main() {
 
         io::stdin().read_line(&mut input).unwrap();
 
-        let command = valid_commands
-            .iter()
-            .find(|command| command.to_string() == input.trim());
+        let tokens = input.trim().split_once(' ');
 
-        match command {
-            Some(c) => {
-                if c == &"exit" {
-                    break;
-                }
+        // TODO: some commands don't allow args so we should verify that somehow
+        let cmd = if let Some((cname, args)) = tokens {
+            Command {
+                name: cname,
+                args: Some(args),
             }
-            None => println!("{}: command not found", input.trim()),
+        } else {
+            Command {
+                name: input.trim(),
+                args: None,
+            }
         };
 
-        input.clear();
+        if !valid_commands.contains(&cmd.name) {
+            println!("{}: command not found", input.trim())
+        }
+
+        match cmd.name {
+            "exit" => break,
+            "echo" => println!("{}", cmd.args.unwrap()),
+            _ => {
+                input.clear(); // Clear the errors
+                continue;
+            }
+        }
+
+        input.clear(); // Don't forget to clear the buffer
     }
 }
