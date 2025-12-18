@@ -4,10 +4,14 @@ use std::io::{self, Write};
 fn main() {
     let mut input = String::new();
 
-    print!("$ ");
-    io::stdout().flush().unwrap();
+    loop {
+        print!("$ ");
+        io::stdout().flush().unwrap();
 
-    io::stdin().read_line(&mut input).unwrap();
+        io::stdin().read_line(&mut input).unwrap();
 
-    println!("{}: command not found", input.trim());
+        println!("{}: command not found", input.trim());
+
+        input.clear();
+    }
 }
