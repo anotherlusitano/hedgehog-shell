@@ -9,10 +9,11 @@ enum ArgType {
     Mandatory,
 }
 
-const BUILTIN_COMMANDS: [BuiltinCommand; 3] = [
+const BUILTIN_COMMANDS: [BuiltinCommand; 4] = [
     BuiltinCommand("exit", ArgType::None),
     BuiltinCommand("echo", ArgType::Optional),
     BuiltinCommand("type", ArgType::Mandatory),
+    BuiltinCommand("pwd", ArgType::None),
 ];
 
 /// 0 = Name ; 1 = have args?
@@ -75,6 +76,10 @@ fn main() {
                                 }
                             }
                         }
+                    }
+                    "pwd" => {
+                        let path = env::current_dir().expect("Wow! What happen?");
+                        println!("{}", path.display());
                     }
                     _ => {
                         input.clear(); // Clear the errors
