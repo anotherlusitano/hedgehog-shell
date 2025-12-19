@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::{env, ffi::OsString, os::unix::fs::PermissionsExt, process::Command};
+use std::{env, ffi::OsString, os::unix::fs::PermissionsExt, path::Path, process::Command};
 
 #[derive(Debug, PartialEq)]
 enum ArgType {
@@ -9,11 +9,12 @@ enum ArgType {
     Mandatory,
 }
 
-const BUILTIN_COMMANDS: [BuiltinCommand; 4] = [
+const BUILTIN_COMMANDS: [BuiltinCommand; 5] = [
     BuiltinCommand("exit", ArgType::None),
     BuiltinCommand("echo", ArgType::Optional),
     BuiltinCommand("type", ArgType::Mandatory),
     BuiltinCommand("pwd", ArgType::None),
+    BuiltinCommand("cd", ArgType::Optional),
 ];
 
 /// 0 = Name ; 1 = have args?
@@ -80,6 +81,23 @@ fn main() {
                     "pwd" => {
                         let path = env::current_dir().expect("Wow! What happen?");
                         println!("{}", path.display());
+                    }
+                    "cd" => {
+                        let home = env::home_dir().expect("Why you don't have $HOME?");
+
+                        if args.is_empty() {
+                            env::set_current_dir(home).expect("Couldn't go to $HOME");
+                            input.clear(); // Don't forget to clear the buffer
+                            continue;
+                        }
+
+                        let location = args.first().unwrap();
+
+                        let path = Path::new(location);
+
+                        if env::set_current_dir(path).is_err() {
+                            println!("cd: {}: No such file or directory", location)
+                        }
                     }
                     _ => {
                         input.clear(); // Clear the errors
