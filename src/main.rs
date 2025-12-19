@@ -85,7 +85,9 @@ fn main() {
                     "cd" => {
                         let home = env::home_dir().expect("Why you don't have $HOME?");
 
-                        if args.is_empty() {
+                        let is_tilde = args.first().unwrap() == &"~";
+
+                        if args.is_empty() || is_tilde {
                             env::set_current_dir(home).expect("Couldn't go to $HOME");
                             input.clear(); // Don't forget to clear the buffer
                             continue;
