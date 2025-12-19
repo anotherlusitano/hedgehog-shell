@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::{env, ffi::OsString, os::unix::fs::PermissionsExt};
+use std::{env, ffi::OsString, os::unix::fs::PermissionsExt, process::Command};
 
 const BUILTIN_COMMANDS: [BuiltinCommand; 3] = [
     BuiltinCommand("exit", false),
@@ -20,7 +20,7 @@ fn find_builtin_command(command_name: &'_ str) -> Option<BuiltinCommand<'_>> {
 
 fn main() {
     // Executables of the $PATH
-    let executables = get_all_executables();
+    let executables = get_path_executables();
 
     let mut input = String::new();
 
@@ -59,7 +59,12 @@ fn main() {
                             match builtin_cmd {
                                 Some(cmd) => println!("{} is a shell builtin", cmd.0),
                                 None => {
-                                    search_executable(command, &executables);
+                                    let executable = get_executable(command, &executables);
+
+                                    match executable {
+                                        Some(e) => println!("{} is {}", e.0.display(), e.1),
+                                        None => println!("{}: not found", command),
+                                    }
                                 }
                             }
                         }
@@ -71,7 +76,19 @@ fn main() {
                 }
             }
             None => {
-                search_executable(cmd, &executables);
+                let executable = get_executable(cmd, &executables);
+
+                match executable {
+                    Some(_) => {
+                        let output = Command::new(cmd)
+                            .args(args)
+                            .output()
+                            .expect("failed to execute process");
+
+                        io::stdout().write_all(&output.stdout).unwrap();
+                    }
+                    None => println!("{cmd}: not found"),
+                }
             }
         }
 
@@ -81,21 +98,21 @@ fn main() {
 
 /// Will search for the executable inside a list of executables
 /// If didn't find any, will print "command not found"
-fn search_executable(exe: &str, executables: &Vec<(OsString, String)>) {
+fn get_executable(exe: &str, executables: &Vec<(OsString, String)>) -> Option<(OsString, String)> {
     for executable in executables {
         if *executable.0 == *exe {
-            println!("{} is {}", executable.0.display(), executable.1);
-            break;
+            return Some((executable.0.clone(), executable.1.clone()));
         } else if executables.last() == Some(executable) {
-            println!("{}: not found", exe);
+            return None;
         }
     }
+    None
 }
 
 /// Splits the $PATH into individual `Path` entries
 /// For each entry, verifies whether the files inside are executable
 /// Returns a `Vec` containing the name and the path of the executables
-fn get_all_executables() -> Vec<(OsString, String)> {
+fn get_path_executables() -> Vec<(OsString, String)> {
     let mut all_executables = Vec::new();
     let key = "PATH";
 
