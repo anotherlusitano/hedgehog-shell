@@ -2,15 +2,22 @@
 use std::io::{self, Write};
 use std::{env, ffi::OsString, os::unix::fs::PermissionsExt, process::Command};
 
+#[derive(Debug, PartialEq)]
+enum ArgType {
+    Optional,
+    None,
+    Mandatory,
+}
+
 const BUILTIN_COMMANDS: [BuiltinCommand; 3] = [
-    BuiltinCommand("exit", false),
-    BuiltinCommand("echo", true),
-    BuiltinCommand("type", true),
+    BuiltinCommand("exit", ArgType::None),
+    BuiltinCommand("echo", ArgType::Optional),
+    BuiltinCommand("type", ArgType::Mandatory),
 ];
 
 /// 0 = Name ; 1 = have args?
 #[derive(Debug, PartialEq)]
-struct BuiltinCommand<'a>(&'a str, bool);
+struct BuiltinCommand<'a>(&'a str, ArgType);
 
 fn find_builtin_command(command_name: &'_ str) -> Option<BuiltinCommand<'_>> {
     BUILTIN_COMMANDS
@@ -37,13 +44,13 @@ fn main() {
         match find_builtin_command(cmd) {
             Some(cmd) => {
                 // If the Command doesn't need args but there are args
-                if !cmd.1 && tokens.len() > 1 {
+                if cmd.1 == ArgType::None && tokens.len() > 1 {
                     println!("{}: too many arguments", input.trim());
                     input.clear(); // Clear the errors
                     continue;
                 }
                 // If the Command need args but there are no args
-                if cmd.1 && tokens.len() == 1 {
+                if cmd.1 == ArgType::Mandatory && tokens.len() == 1 {
                     println!("{}: too few arguments", input.trim());
                     input.clear(); // Clear the errors
                     continue;
