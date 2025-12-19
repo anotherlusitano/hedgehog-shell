@@ -71,7 +71,7 @@ fn main() {
                 }
             }
             None => {
-                search_executable(input.trim(), &executables);
+                search_executable(cmd, &executables);
             }
         }
 
