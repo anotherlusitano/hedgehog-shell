@@ -39,6 +39,10 @@ fn main() {
 
         io::stdin().read_line(&mut input).unwrap();
 
+        if input.trim().is_empty() {
+            continue;
+        }
+
         let tokens: Vec<&str> = input.trim().split(' ').collect();
 
         let (cmd, args) = tokens.split_first().unwrap();
