@@ -1,6 +1,8 @@
-#[allow(unused_imports)]
+use crate::parse_input::parse_input;
 use std::io::{self, Write};
 use std::{env, ffi::OsString, os::unix::fs::PermissionsExt, path::Path, process::Command};
+
+mod parse_input;
 
 #[derive(Debug, PartialEq)]
 enum ArgType {
@@ -43,7 +45,7 @@ fn main() {
             continue;
         }
 
-        let tokens: Vec<&str> = input.trim().split(' ').collect();
+        let tokens: Vec<String> = parse_input(input.trim());
 
         let (cmd, args) = tokens.split_first().unwrap();
 
@@ -67,7 +69,7 @@ fn main() {
                     "echo" => println!("{}", args.join(" ")),
                     "type" => {
                         for command in args {
-                            let builtin_cmd = BUILTIN_COMMANDS.iter().find(|cmd| &cmd.0 == command);
+                            let builtin_cmd = BUILTIN_COMMANDS.iter().find(|cmd| cmd.0 == command);
 
                             match builtin_cmd {
                                 Some(cmd) => println!("{} is a shell builtin", cmd.0),
@@ -89,7 +91,7 @@ fn main() {
                     "cd" => {
                         let home = env::home_dir().expect("Why you don't have $HOME?");
 
-                        if args.is_empty() || args.first().unwrap() == &"~" {
+                        if args.is_empty() || args.first().unwrap() == "~" {
                             env::set_current_dir(home).expect("Couldn't go to $HOME");
                             input.clear(); // Don't forget to clear the buffer
                             continue;
