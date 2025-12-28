@@ -32,6 +32,12 @@ pub fn parse_input(input: &str) -> Vec<String> {
             if next_char.is_whitespace() {
                 // Will push the word if exists
                 if !word.is_empty() {
+                    // but if its inside quotes, will push the next character to the word
+                    if is_to_join {
+                        word.push(next_char);
+                        continue;
+                    }
+
                     let final_word = word.clone().into_iter().collect();
                     tokens.push(final_word);
                     word.clear();
@@ -234,6 +240,18 @@ mod tests {
         let input = r"echo \'hello\'";
         let tokens: Vec<String> = parse_input(input);
         let expected_output = vec!["echo".to_string(), r"'hello'".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r#"cat "/tmp/file\\name""#;
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec!["cat".to_string(), r"/tmp/file\name".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r#"cat "/tmp/file\ name""#;
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec!["cat".to_string(), r"/tmp/file name".to_string()];
 
         assert_eq!(tokens, expected_output);
     }
