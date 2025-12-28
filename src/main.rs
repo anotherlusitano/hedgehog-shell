@@ -66,7 +66,15 @@ fn main() {
 
                 match cmd.0 {
                     "exit" => break,
-                    "echo" => println!("{}", args.join(" ")),
+                    "echo" => {
+                        // This prevents excessive whitespace in the
+                        // printed output when using a backslash
+                        if !args.contains(&" ".to_string()) {
+                            println!("{}", args.join(" "));
+                        } else {
+                            println!("{}", args.concat());
+                        }
+                    }
                     "type" => {
                         for command in args {
                             let builtin_cmd = BUILTIN_COMMANDS.iter().find(|cmd| cmd.0 == command);

@@ -24,6 +24,34 @@ pub fn parse_input(input: &str) -> Vec<String> {
     while let Some(c) = iter.next() {
         let next_char_is_whitespace = iter.peek() == Some(&' ');
         let has_next = iter.peek().is_some();
+        let is_backslash = c == '\\';
+
+        if is_backslash && has_next {
+            let next_char = iter.next().unwrap();
+
+            if next_char.is_whitespace() {
+                // Will push the word if exists
+                if !word.is_empty() {
+                    let final_word = word.clone().into_iter().collect();
+                    tokens.push(final_word);
+                    word.clear();
+                }
+
+                // and will push the character after the backslash
+                tokens.push(next_char.to_string());
+            } else {
+                // just push the char if there is no whitespace
+                word.push(next_char);
+            }
+
+            // Push the word if there are no remaining characters
+            if iter.peek().is_none() {
+                let final_word = word.clone().into_iter().collect();
+                tokens.push(final_word);
+                break;
+            }
+            continue;
+        }
 
         // If it contains more than one whitespace, just ignore it
         if !is_to_join && c == ' ' && next_char_is_whitespace {
@@ -62,6 +90,10 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
         // Add the whitespace and the word as separate elements
         if c == ' ' && has_next {
+            // Ignore whitespace if no characters are available to form a word
+            if word.is_empty() {
+                continue;
+            }
             let final_word = word.clone().into_iter().collect();
             tokens.push(final_word);
 
@@ -72,12 +104,6 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
         // If its the last character, will push the word
         if !has_next {
-            // HACK: In certain cases, the word may be empty, which results in the insertion of an empty element
-            if word.is_empty() {
-                tokens.push(c.to_string());
-                continue;
-            }
-
             if c != ' ' {
                 word.push(c);
             }
@@ -166,6 +192,48 @@ mod tests {
         let input = "echo 'hello    \"   \"   world'".to_string();
         let tokens: Vec<String> = parse_input(&input);
         let expected_output = vec!["echo".to_string(), "hello    \"   \"   world".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r"echo three\ \ \ spaces";
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec![
+            "echo".to_string(),
+            "three".to_string(),
+            " ".to_string(),
+            " ".to_string(),
+            " ".to_string(),
+            "spaces".to_string(),
+        ];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r"echo before\     after";
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec![
+            "echo".to_string(),
+            "before".to_string(),
+            " ".to_string(),
+            "after".to_string(),
+        ];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r"echo test\nexample";
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec!["echo".to_string(), "testnexample".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r"echo hello\\world";
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec!["echo".to_string(), r"hello\world".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r"echo \'hello\'";
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec!["echo".to_string(), r"'hello'".to_string()];
 
         assert_eq!(tokens, expected_output);
     }
