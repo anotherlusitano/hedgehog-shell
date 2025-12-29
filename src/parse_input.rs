@@ -28,6 +28,7 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
         if is_backslash && has_next {
             let next_char = iter.next().unwrap();
+            let next_char_is_quote = next_char == '"' || next_char == '\'';
 
             if next_char.is_whitespace() {
                 // Will push the word if exists
@@ -45,6 +46,11 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
                 // and will push the character after the backslash
                 tokens.push(next_char.to_string());
+            } else if next_char_is_quote && is_to_join {
+                // Include the backslash and the quote
+                // why? idk...
+                word.push(c);
+                word.push(next_char);
             } else {
                 // just push the char if there is no whitespace
                 word.push(next_char);
@@ -252,6 +258,15 @@ mod tests {
         let input = r#"cat "/tmp/file\ name""#;
         let tokens: Vec<String> = parse_input(input);
         let expected_output = vec!["cat".to_string(), r"/tmp/file name".to_string()];
+
+        assert_eq!(tokens, expected_output);
+
+        let input = r#"echo 'shell\"scripttest\"example'"#;
+        let tokens: Vec<String> = parse_input(input);
+        let expected_output = vec![
+            "echo".to_string(),
+            r#"shell\"scripttest\"example"#.to_string(),
+        ];
 
         assert_eq!(tokens, expected_output);
     }
